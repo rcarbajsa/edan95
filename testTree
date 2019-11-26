@@ -1,0 +1,33 @@
+// The Decision Tree
+digraph {
+	0 [label="
+id: 0"]
+	1 [label="
+id: 1
+att_value: s"]
+	0 -> 1
+	2 [label="
+id: 2
+att_value: r"]
+	1 -> 2
+	3 [label="
+id: 3
+att_value: y"]
+	2 -> 3
+	4 [label="
+id: 4
+att_value: g"]
+	2 -> 4
+	5 [label="
+id: 5
+att_value: b"]
+	2 -> 5
+	6 [label="
+id: 6
+att_value: i"]
+	1 -> 6
+	7 [label="
+id: 7
+att_value: l"]
+	0 -> 7
+}
