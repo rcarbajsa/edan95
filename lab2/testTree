@@ -2,32 +2,90 @@
 digraph {
 	0 [label="
 id: 0"]
+	0 [label="
+id: 0
+attribute: size
+entropy: 0.9886994082884974"]
+	1 [label="
+id: 1
+att_value: s"]
 	1 [label="
 id: 1
 att_value: s"]
 	0 -> 1
+	1 [label="
+id: 1
+att_value: s
+attribute: shape
+entropy: 0.8112781244591328"]
+	2 [label="
+id: 2
+att_value: r"]
 	2 [label="
 id: 2
 att_value: r"]
 	1 -> 2
+	2 [label="
+id: 2
+att_value: r
+attribute: color
+entropy: 0.9182958340544896"]
+	3 [label="
+id: 3
+att_value: y"]
 	3 [label="
 id: 3
 att_value: y"]
 	2 -> 3
+	3 [label="
+id: 3
+att_value: y
+label: +"]
+	4 [label="
+id: 4
+att_value: g"]
 	4 [label="
 id: 4
 att_value: g"]
 	2 -> 4
+	4 [label="
+id: 4
+att_value: g
+label: -"]
+	5 [label="
+id: 5
+att_value: b"]
 	5 [label="
 id: 5
 att_value: b"]
 	2 -> 5
+	2 [label="
+id: 2
+attribute: color
+entropy: 0.9182958340544896
+att_value: r
+label: +
+samples: 0"]
+	6 [label="
+id: 6
+att_value: i"]
 	6 [label="
 id: 6
 att_value: i"]
 	1 -> 6
+	6 [label="
+id: 6
+att_value: i
+label: +"]
+	7 [label="
+id: 7
+att_value: l"]
 	7 [label="
 id: 7
 att_value: l"]
 	0 -> 7
+	7 [label="
+id: 7
+att_value: l
+label: -"]
 }

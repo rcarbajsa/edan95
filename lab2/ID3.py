@@ -36,10 +36,14 @@ class ID3DecisionTreeClassifier:
         return node
 
     def set_node_attr(self, node, data):
+        nodeString = ''
+        for k in node:
+            if ((node[k] != None) and (k != 'nodes')):
+                nodeString += "\n" + str(k) + ": " + str(node[k])
         for item in data:
             node[item] = data[item]
-        print("Nodes: " + str(self.nodes))
-        print("Node: " + str(node))
+            nodeString += "\n" + str(item) + ": " + str(node[item])
+        self.__dot.node(str(node['id']), label=nodeString)
         self.nodes[node['id']] = node
         return node
 
@@ -74,7 +78,6 @@ class ID3DecisionTreeClassifier:
         root = self.new_ID3_node(data={})
         self.__root = root
         self.add_node_to_graph(root, parentid=-1)
-       # tree = Tree(root)
         tree = self.rec_id3(root, data, target, attributes, classes)
         return tree
 
@@ -86,7 +89,6 @@ class ID3DecisionTreeClassifier:
         return -entropy
 
     def info_gain(self, entropy, data, attribute, target, classes):
-        print(data)
         item_entropies = []
         info_gain = 0
         for item in attribute:
@@ -105,9 +107,6 @@ class ID3DecisionTreeClassifier:
     def rec_id3(self, node, data, target, attributes, classes):
         # No attributes left or all samples belong to one class
         if not attributes or len(set(target)) == 1 or not data:
-            print("-----------------")
-            print(node['id'])
-            print(target)
             return self.set_node_attr(node, data={'label': most_common_class(target)})
         else:
              
@@ -116,17 +115,14 @@ class ID3DecisionTreeClassifier:
             for att in attributes:
                 info_gain.append(self.info_gain(ent, data, attributes[att], target, classes))
             max_info_gain = max(info_gain)
-            print(max_info_gain)
             attribute = list(attributes.items())[info_gain.index(max_info_gain)][0]
             values = list(attributes.items())[info_gain.index(max_info_gain)][1]
-            print(attribute)
-            self.set_node_attr(node, data={'attribute': attribute})
+            self.set_node_attr(node, data={'attribute': attribute, 'entropy': ent})
             del attributes[attribute]
             for value in values:
                 branch_node = self.new_ID3_node(data={'att_value': value})
 
                 self.add_node_to_graph(branch_node, node['id'])
-                #tree.addNode(branch_node, node)
                 new_target = []
                 new_data = []
                 node['nodes'].append(branch_node)
