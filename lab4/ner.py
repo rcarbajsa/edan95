@@ -1,6 +1,7 @@
 from conll_dictorizer import CoNLLDictorizer, Token
 from pathlib import Path
 from collect_embeddings import collect_embeddings 
+import numpy as np 
 
 def load_conll2003_en():
 
@@ -33,6 +34,12 @@ def create_indices(x, y, embedding_dict):
     print(len(vocab) - 2)
     return vocab
 
+def building_embedding_matrix(vocab, embedding_dict):
+    matrix = np.zeros(len(vocab), len(embedding_dict['.']))
+    for i, word in enumerate(vocab, start=2):
+        matrix[i] = embedding_dict[word]
+    return matrix
+
 if __name__ == '__main__':
 
     train_sentences, dev_sentences, test_sentences, column_names = load_conll2003_en()
@@ -44,5 +51,6 @@ if __name__ == '__main__':
     cl = collect_embeddings()
     embedding_dict = cl.collect()
     vocab = create_indices(x, y, embedding_dict)
+    matrix = building_embedding_matrix(vocab, embedding_dict)
 
     
