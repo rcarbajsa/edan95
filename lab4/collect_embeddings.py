@@ -19,6 +19,7 @@ class collect_embeddings:
             vector = np.array(values[1:], dtype='float32')
             self.embeddings_dict[word] = vector
         f.close()
+        return self.embeddings_dict
 
     def cosine_similarity(self, word):
         
