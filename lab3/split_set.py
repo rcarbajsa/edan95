@@ -7,20 +7,20 @@ Author: Pierre Nugues
 import os
 import random
 import shutil
-from pathlib import Path
 # The machine name
-vilde = False
+vilde = True
 
 # To create the same dataset
 random.seed(0)
 
 # Here write the path to your dataset
 if vilde:
-    base = '/home/pierre/'
+    base = '/home/rcarbajsa/'
 else:
-    original_dataset_dir = Path('/Users/rcarb/OneDrive/Escritorio/edan95/labs/lab3/flowers')
-    dataset = Path('/Users/rcarb/OneDrive/Escritorio/edan95/labs/lab3/dataset')
-
+    base = '/Users/pierre/Documents/'
+original_dataset_dir = os.path.join(base, 'edan95/datasets/flowers')
+print(original_dataset_dir)
+dataset = os.path.join(base, 'edan95/datasets/flowers_split')
 train_dir = os.path.join(dataset, 'train')
 validation_dir = os.path.join(dataset, 'validation')
 test_dir = os.path.join(dataset, 'test')
