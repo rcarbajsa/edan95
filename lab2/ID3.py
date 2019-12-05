@@ -1,13 +1,23 @@
 import math
 from collections import Counter
 from graphviz import Digraph
-#from tree import Tree
-
+import pdb
+import ToyData as td
+from collections import OrderedDict
 def most_common_class(target):
     if not target:
         return '+'
     else:
         return max(set(target), key=target.count)
+def main():
+    attributes, classes, data, target, data2, target2 = td.ToyData().get_data()
+    id3 = ID3DecisionTreeClassifier()
+    myTree = id3.fit(data, target, attributes, classes)
+    plot = id3.make_dot_data()
+    plot.render("testTree")
+    #pdb.set_trace()
+    result = id3.predict(data2)
+    print(result)
 
 
 class ID3DecisionTreeClassifier:
@@ -67,12 +77,6 @@ class ID3DecisionTreeClassifier:
     def make_dot_data(self):
         return self.__dot
 
-    # remaining attributes, the currently evaluated data and target.
-    def find_split_attr(self):
-
-        # Change this to make some more sense
-        return None
-
     # the entry point for the recursive ID3-algorithm, you need to fill in the calls to your recursive implementation
     def fit(self, data, target, attributes, classes):
         root = self.new_ID3_node(data={})
@@ -107,7 +111,7 @@ class ID3DecisionTreeClassifier:
     def rec_id3(self, node, data, target, attributes, classes):
         # No attributes left or all samples belong to one class
         if not attributes or len(set(target)) == 1 or not data:
-            return self.set_node_attr(node, data={'label': most_common_class(target)})
+            return self.set_node_attr(node, data={'entropy': self.entropy(classes, target),'label': most_common_class(target), 'samples': len(target)})
         else:
              
             ent = self.entropy(classes, target)
@@ -117,11 +121,11 @@ class ID3DecisionTreeClassifier:
             max_info_gain = max(info_gain)
             attribute = list(attributes.items())[info_gain.index(max_info_gain)][0]
             values = list(attributes.items())[info_gain.index(max_info_gain)][1]
-            self.set_node_attr(node, data={'attribute': attribute, 'entropy': ent})
-            del attributes[attribute]
+            self.set_node_attr(node, data={'attribute': attribute, 'entropy': ent, 'samples': len(target)})
+            attributes_cpy = OrderedDict(attributes)
+            del attributes_cpy[attribute]
             for value in values:
                 branch_node = self.new_ID3_node(data={'att_value': value})
-
                 self.add_node_to_graph(branch_node, node['id'])
                 new_target = []
                 new_data = []
@@ -131,9 +135,10 @@ class ID3DecisionTreeClassifier:
                         new_data.append(data[i])
                         new_target.append(target[i])
                 if not new_target:
-                    self.set_node_attr(node, data={'label': most_common_class(target), 'samples': 0})
+                    #pdb.set_trace()
+                    self.set_node_attr(branch_node, data={'label': most_common_class(target), 'samples': 0})
                 else:
-                    self.rec_id3(branch_node, new_data, new_target, attributes, classes)
+                    self.rec_id3(branch_node, new_data, new_target, attributes_cpy, classes)
 
     def predict(self, data):
         predicted = list()
@@ -148,3 +153,4 @@ class ID3DecisionTreeClassifier:
         for branch in node['nodes']:
             if self.nodes[branch['id']]['att_value'] in example:
                 return self.predict_rek(self.nodes[branch['id']], example)
+if __name__ == "__main__": main()

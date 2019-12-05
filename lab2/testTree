@@ -5,7 +5,8 @@ id: 0"]
 	0 [label="
 id: 0
 attribute: size
-entropy: 0.9886994082884974"]
+entropy: 0.9886994082884974
+samples: 16"]
 	1 [label="
 id: 1
 att_value: s"]
@@ -17,7 +18,8 @@ att_value: s"]
 id: 1
 att_value: s
 attribute: shape
-entropy: 0.8112781244591328"]
+entropy: 0.8112781244591328
+samples: 8"]
 	2 [label="
 id: 2
 att_value: r"]
@@ -29,7 +31,8 @@ att_value: r"]
 id: 2
 att_value: r
 attribute: color
-entropy: 0.9182958340544896"]
+entropy: 0.9182958340544896
+samples: 6"]
 	3 [label="
 id: 3
 att_value: y"]
@@ -40,7 +43,9 @@ att_value: y"]
 	3 [label="
 id: 3
 att_value: y
-label: +"]
+entropy: 0.7219280948873623
+label: +
+samples: 5"]
 	4 [label="
 id: 4
 att_value: g"]
@@ -51,7 +56,9 @@ att_value: g"]
 	4 [label="
 id: 4
 att_value: g
-label: -"]
+entropy: -0.0
+label: -
+samples: 1"]
 	5 [label="
 id: 5
 att_value: b"]
@@ -59,11 +66,9 @@ att_value: b"]
 id: 5
 att_value: b"]
 	2 -> 5
-	2 [label="
-id: 2
-attribute: color
-entropy: 0.9182958340544896
-att_value: r
+	5 [label="
+id: 5
+att_value: b
 label: +
 samples: 0"]
 	6 [label="
@@ -76,7 +81,9 @@ att_value: i"]
 	6 [label="
 id: 6
 att_value: i
-label: +"]
+entropy: -0.0
+label: +
+samples: 2"]
 	7 [label="
 id: 7
 att_value: l"]
@@ -87,5 +94,71 @@ att_value: l"]
 	7 [label="
 id: 7
 att_value: l
-label: -"]
+attribute: color
+entropy: 0.9544340029249649
+samples: 8"]
+	8 [label="
+id: 8
+att_value: y"]
+	8 [label="
+id: 8
+att_value: y"]
+	7 -> 8
+	8 [label="
+id: 8
+att_value: y
+attribute: shape
+entropy: 0.9852281360342516
+samples: 7"]
+	9 [label="
+id: 9
+att_value: r"]
+	9 [label="
+id: 9
+att_value: r"]
+	8 -> 9
+	9 [label="
+id: 9
+att_value: r
+entropy: 0.9182958340544896
+label: -
+samples: 6"]
+	10 [label="
+id: 10
+att_value: i"]
+	10 [label="
+id: 10
+att_value: i"]
+	8 -> 10
+	10 [label="
+id: 10
+att_value: i
+entropy: -0.0
+label: +
+samples: 1"]
+	11 [label="
+id: 11
+att_value: g"]
+	11 [label="
+id: 11
+att_value: g"]
+	7 -> 11
+	11 [label="
+id: 11
+att_value: g
+entropy: -0.0
+label: -
+samples: 1"]
+	12 [label="
+id: 12
+att_value: b"]
+	12 [label="
+id: 12
+att_value: b"]
+	7 -> 12
+	12 [label="
+id: 12
+att_value: b
+label: -
+samples: 0"]
 }
