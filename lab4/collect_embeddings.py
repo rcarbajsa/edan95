@@ -1,6 +1,6 @@
-from pathlib import Path
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+import pdb
 
 class collect_embeddings:
 
@@ -10,7 +10,7 @@ class collect_embeddings:
 
     def collect(self):
 
-        path = Path('/Users/rcarb/OneDrive/Escritorio/edan95/datasets')  
+        path = '/home/rcarbajsa/Escritorio/edan95_datasets/glove.6B.100d.txt'  
         f = open(path)
 
         for line in f:
@@ -25,15 +25,25 @@ class collect_embeddings:
         
         vector1 = self.embeddings_dict[word]
         vector1 = vector1.reshape(1, len(vector1))
-        cos = []
+        list_cos = []
         for key, vector in self.embeddings_dict.items():
-            vector = vector.reshape(1, len(vector))
-            cos = cosine_similarity(vector1,vector)
-            if len(cos) < 5:
-                cos.append((word,cos))
-            elif cos > min(cos,key=lambda item:item[1]): 
-                cos.remove(min(cos,key=lambda item:item[1]))
-                cos.append((word,cos))
-        for word, _ in cos:
-            print(word)
-        
+            if key is not word:
+                vector = vector.reshape(1, len(vector))
+                cos = cosine_similarity(vector1,vector)
+                if len(list_cos) < 5:
+                    list_cos.append((key,cos[0][0]))
+                elif cos[0][0] > min(list_cos,key=lambda item:item[1])[1]: 
+                    list_cos.remove(min(list_cos,key=lambda item:item[1]))
+                    list_cos.append((key,cos[0][0]))
+        for word, cos in list_cos:
+            print(word + ' ' +str(cos))
+        print()
+
+if __name__ == '__main__':
+    cl = collect_embeddings()
+    cl.collect()
+    #pdb.set_trace()
+    cl.cosine_similarity('table')
+    cl.cosine_similarity('france')
+    cl.cosine_similarity('sweden')
+    

@@ -1,17 +1,17 @@
 from conll_dictorizer import CoNLLDictorizer, Token
-from pathlib import Path
 from collect_embeddings import collect_embeddings 
 import numpy as np 
+import pdb
 
 def load_conll2003_en():
 
-    train_file = Path('/Users/rcarb/OneDrive/Escritorio/edan95/datasets/NER-data/eng.train')
-    dev_file = Path('/Users/rcarb/OneDrive/Escritorio/edan95/datasets/NER-data/eng.valid')
-    test_file = Path('/Users/rcarb/OneDrive/Escritorio/edan95/datasets/NER-data/eng.test')
+    train_file = '/home/rcarbajsa/Escritorio/edan95_datasets/NER-data/eng.train'
+    dev_file = '/home/rcarbajsa/Escritorio/edan95_datasets/NER-data/eng.valid'
+    test_file = '/home/rcarbajsa/Escritorio/edan95_datasets/NER-data/eng.test'
     column_names = ['form', 'ppos', 'pchunk', 'ner']
-    train_sentences = open(train_file, encoding='utf8').read().strip()
-    dev_sentences = open(dev_file, encoding='utf8').read().strip()
-    test_sentences = open(test_file, encoding='utf8').read().strip()
+    train_sentences = open(train_file).read().strip()
+    dev_sentences = open(dev_file).read().strip()
+    test_sentences = open(test_file).read().strip()
     return train_sentences, dev_sentences, test_sentences, column_names
 
 def build_dict():
@@ -30,14 +30,26 @@ def build_dict():
 
 def create_indices(x, y, embedding_dict):
 
-    vocab = ' ' + '?' + set(set(sentence) for sentence in x) + set(set(sentence) for sentence in y) + embedding_dict.keys()
+    xs, ys = [], []
+    for sentence in x:
+        for word in set(sentence):
+            xs.append(word)
+    for sentence in y:
+        for word in set(sentence):
+            ys.append(word)
+    
+    vocab = [' ', '?'] + list(set(xs)) + list(set(ys)) + embedding_dict.keys()
     print(len(vocab) - 2)
     return vocab
 
 def building_embedding_matrix(vocab, embedding_dict):
-    matrix = np.zeros(len(vocab), len(embedding_dict['.']))
-    for i, word in enumerate(vocab, start=2):
-        matrix[i] = embedding_dict[word]
+
+    matrix = np.zeros((len(vocab), len(embedding_dict['.'])))
+    i = 2
+    for word in vocab[2:]:
+        if word in embedding_dict:
+            matrix[i] = embedding_dict[word]
+        i+=1
     return matrix
 
 if __name__ == '__main__':
@@ -51,6 +63,7 @@ if __name__ == '__main__':
     cl = collect_embeddings()
     embedding_dict = cl.collect()
     vocab = create_indices(x, y, embedding_dict)
+    #pdb.set_trace()
     matrix = building_embedding_matrix(vocab, embedding_dict)
 
     
