@@ -2,6 +2,10 @@ from conll_dictorizer import CoNLLDictorizer, Token
 from collect_embeddings import collect_embeddings 
 import numpy as np 
 import pdb
+from keras.models import Sequential
+from keras.layers import Flatten, Dense, Embedding, SimpleRNN
+import matplotlib.pyplot as plt
+from keras.utils import to_categorical
 
 def load_conll2003_en():
 
@@ -52,6 +56,53 @@ def building_embedding_matrix(vocab, embedding_dict):
         i+=1
     return matrix
 
+def convert_xy(x, vocab):
+    xx =[]
+    padding_seq = max(len(sentence) for sentence in x)
+    for sentence in x:
+        aux = [0] * padding_seq
+        for word in sentence:
+            aux.append(vocab.index(word))
+        xx.append(aux)
+    return xx
+
+def build_rnn(max_words, embedding_dim, matrix, x, y):
+
+    model = Sequential()
+    model.add(Embedding(max_words, embedding_dim))
+    model.add(SimpleRNN(32))
+    model.add(Dense(32,activation='relu'))
+    model.add(Dense(1,activation='sigmoid'))
+    model.layers[0].set_weights([matrix])
+    model.layers[0].trainable = False
+    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['acc'])
+    #categ_y = to_categorical(y)
+
+    history = model.fit(x, y,
+                    epochs=10,
+                    batch_size=128,
+                    validation_split=0.2)
+    acc = history.history['acc']
+    val_acc = history.history['val_acc']
+    loss = history.history['loss']
+    val_loss = history.history['val_loss']
+
+    epochs = range(len(acc))
+
+    plt.plot(epochs, acc, 'bo', label='Training acc')
+    plt.plot(epochs, val_acc, 'b', label='Validation acc')
+    plt.title('Training and validation accuracy')
+    plt.legend()
+
+    plt.figure()
+
+    plt.plot(epochs, loss, 'bo', label='Training loss')
+    plt.plot(epochs, val_loss, 'b', label='Validation loss')
+    plt.title('Training and validation loss')
+    plt.legend()
+
+    plt.show()
+
 if __name__ == '__main__':
 
     train_sentences, dev_sentences, test_sentences, column_names = load_conll2003_en()
@@ -65,5 +116,12 @@ if __name__ == '__main__':
     vocab = create_indices(x, y, embedding_dict)
     #pdb.set_trace()
     matrix = building_embedding_matrix(vocab, embedding_dict)
+    x = convert_xy(x, vocab)
+    y = convert_xy(y, vocab)
+    print(x[14])
+    print(y[56])
+    max_words = len(vocab)
+    embedding_dim = len(embedding_dict['.'])
+    build_rnn(max_words, embedding_dim, matrix, x, y)
 
     
