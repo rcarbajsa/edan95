@@ -3,7 +3,7 @@ from collect_embeddings import collect_embeddings
 import numpy as np 
 import pdb
 from keras.models import Sequential
-from keras.layers import Flatten, Dense, Embedding, SimpleRNN
+from keras.layers import Flatten, Dense, Embedding, SimpleRNN, Dropout, Bidirectional, LSTM
 import matplotlib.pyplot as plt
 from keras.utils import to_categorical
 from keras.preprocessing.sequence import pad_sequences
@@ -78,12 +78,11 @@ def convert_xy(x, vocab):
 def build_rnn(max_words, embedding_dim, matrix, x_train_pad, y_train_pad, x_dev_pad, y_dev_pad, x_test_pad, y_test_pad, ner_len):
 
     model = Sequential()
-    print(max_words)
-    print(embedding_dim)
     model.add(Embedding(max_words, embedding_dim, mask_zero=True, input_length=150))
     model.layers[0].set_weights([matrix])
     model.layers[0].trainable = False
-    model.add(SimpleRNN(32, return_sequences=True))
+    model.add(Bidirectional(SimpleRNN(100, return_sequences=True)))
+    model.add(Dropout(0.5))
     model.add(Dense(ner_len,activation='softmax'))
 
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['acc'])
@@ -135,11 +134,9 @@ def build_rnn(max_words, embedding_dim, matrix, x_train_pad, y_train_pad, x_dev_
         for j in range(len(predicted_tag[i])):
             if categ_y_test[i][j][0] == 0:
                 row.append(predicted_tag[i][j])
-                print(row)
         predicted_tag_unpadded.append(row)
 
     output = open('conlleval.txt', 'w')
-    item = ''
     #pdb.set_trace()
     for i in range(len(predicted_tag_unpadded)):
         for j in range(len(predicted_tag_unpadded[i])):
@@ -148,8 +145,64 @@ def build_rnn(max_words, embedding_dim, matrix, x_train_pad, y_train_pad, x_dev_
         output.write('\n')
     output.close()    
 
+def build_lstm(max_words, embedding_dim, matrix, x_train_pad, y_train_pad, x_dev_pad, y_dev_pad, x_test_pad, y_test_pad, ner_len):
 
-
+    model = Sequential()
+    model.add(Embedding(max_words, embedding_dim, mask_zero=True, input_length=150))
+    model.layers[0].set_weights([matrix])
+    model.layers[0].trainable = True
+    model.add(Bidirectional(LSTM(100, return_sequences=True, recurrent_dropout=0.5)))
+    model.add(Bidirectional(LSTM(100, return_sequences=True, recurrent_dropout=0.5)))
+    model.add(Dense(ner_len,activation='softmax'))
+    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['acc'])
+    model.summary()
+    categ_y_train = to_categorical(y_train_pad, num_classes=ner_len)
+    categ_y_dev = to_categorical(y_dev_pad, num_classes=ner_len)
+    categ_y_test = to_categorical(y_test_pad, num_classes=ner_len)
+    history = model.fit(x_train_pad, categ_y_train,
+                    epochs=12,
+                    batch_size=128,
+                    validation_data=(x_dev_pad,categ_y_dev))
+    """acc = history.history['acc']
+    val_acc = history.history['val_acc']
+    loss = history.history['loss']
+    val_loss = history.history['val_loss']
+    epochs = range(len(acc))
+    plt.plot(epochs, acc, 'bo', label='Training acc')
+    plt.plot(epochs, val_acc, 'b', label='Validation acc')
+    plt.title('Training and validation accuracy')
+    plt.legend()
+    plt.figure()
+    plt.plot(epochs, loss, 'bo', label='Training loss')
+    plt.plot(epochs, val_loss, 'b', label='Validation loss')
+    plt.title('Training and validation loss')
+    plt.legend()
+    plt.show()"""
+    print('-----------TEST-----------')
+    test_loss, test_accuracy = model.evaluate(x_test_pad, categ_y_test)
+    print('Loss: ' + str(test_loss) + ' Accuracy: ' + str(test_accuracy))
+    print('-----------EVALUATE-----------')
+    prediction = model.predict(x_test_pad)
+    prediction = prediction.argmax(axis=-1)
+    print(prediction[1])
+    inverted_ner_list = {v:k for k, v in ner_list.items()}
+    print(inverted_ner_list.keys()[:3])
+    predicted_tag = [[inverted_ner_list[i] for i in pred] for pred in prediction]
+    predicted_tag_unpadded = []
+    for i in range(len(predicted_tag)):
+        row = []
+        for j in range(len(predicted_tag[i])):
+            if categ_y_test[i][j][0] == 0:
+                row.append(predicted_tag[i][j])
+        predicted_tag_unpadded.append(row)
+    output = open('conlleval.txt', 'w')
+    #pdb.set_trace()
+    for i in range(len(predicted_tag_unpadded)):
+        for j in range(len(predicted_tag_unpadded[i])):
+            item = str(x_test[i][j]) + ' ' + str(y_test[i][j]) + ' ' + str(predicted_tag_unpadded[i][j]) + '\n'
+            output.write(item)
+        output.write('\n')
+    output.close()    
 
 
 
@@ -189,6 +242,7 @@ if __name__ == '__main__':
     x_test_pad = convert_xy(x_test, vocab)
     y_test_pad = convert_xy(y_test, ner_list)
 
-    build_rnn(max_words, embedding_dim, matrix, x_train_pad, y_train_pad, x_dev_pad, y_dev_pad, x_test_pad, y_test_pad, ner_len=len(ner_list))
+    #build_rnn(max_words, embedding_dim, matrix, x_train_pad, y_train_pad, x_dev_pad, y_dev_pad, x_test_pad, y_test_pad, ner_len=len(ner_list))
+    build_lstm(max_words, embedding_dim, matrix, x_train_pad, y_train_pad, x_dev_pad, y_dev_pad, x_test_pad, y_test_pad, ner_len=len(ner_list))
 
     
