@@ -87,6 +87,7 @@ class ID3DecisionTreeClassifier:
 
     def entropy(self, classes, target):
         entropy = 0
+        
         for label in classes:
             if(target.count(label)):
                 entropy += (target.count(label) / len(target)) * math.log(target.count(label) / len(target), 2)
