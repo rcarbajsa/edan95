@@ -55,9 +55,8 @@ def gaussian_nb(mnsit) :
             else:
                 image_sum.append(2) #White
         data_summarized.append(image_sum)
-    n_samples = len(digits.images)
-    data = digits.images.reshape((n_samples, -1))
-    train_features, test_features, train_labels, test_labels = train_test_split(data, digits.target, test_size=0.3)
+    data_summarized = np.stack(data_summarized)
+    train_features, test_features, train_labels, test_labels = train_test_split(data_summarized, digits.target, test_size=0.3)
     gnb.fit(train_features, train_labels)
     y_pred = gnb.predict(test_features)
 
@@ -96,8 +95,6 @@ def ncc(mnist):
     train_features, test_features, train_labels, test_labels = mnist.get_data()
     centroids = fit(train_features, train_labels)
     y_pred = predict(test_features, centroids)
-    print(test_labels)
-    print(y_pred)
     
     print("Classification report SKLearn GNB:\n%s\n"
       % (metrics.classification_report(test_labels, y_pred)))
@@ -119,7 +116,6 @@ def ncc(mnist):
     print("Confusion matrix SKLearn GNB:\n%s" % metrics.confusion_matrix(test_labels, y_pred))
 
     print('---------------------SciKitLearn Digits Summarized---------------------')
-    print(data[0])
     
     data_summarized = []
     for image in data:
@@ -132,9 +128,8 @@ def ncc(mnist):
             else:
                 image_sum.append(2) #White
         data_summarized.append(image_sum)
-    n_samples = len(digits.images)
-    data = digits.images.reshape((n_samples, -1))
-    train_features, test_features, train_labels, test_labels = train_test_split(data, digits.target, test_size=0.3)
+    data_summarized = np.stack(data_summarized)
+    train_features, test_features, train_labels, test_labels = train_test_split(data_summarized, digits.target, test_size=0.3)
     centroids = fit(train_features, train_labels)
     y_pred = predict(test_features, centroids)
 
@@ -194,6 +189,7 @@ def nbc():
     data = digits.data
     classes = digits.target_names
     train_features, test_features, train_labels, test_labels = train_test_split(data, digits.target, test_size=0.3)
+    print(train_features[:, 1])
     class_prob = classes_prob(train_labels, classes)
     print(class_prob)
     cpt_table = cpt(train_features, train_labels)
@@ -201,12 +197,118 @@ def nbc():
     print("Classification report SKLearn GNB:\n%s\n"
       % (metrics.classification_report(test_labels, y_pred)))
     print("Confusion matrix SKLearn GNB:\n%s" % metrics.confusion_matrix(test_labels, y_pred))
+    print('---------------------SciKitLearn Digits Summarized---------------------')
+    
+    data_summarized = []
+    for image in data:
+        image_sum = []
+        for pixel in image:
+            if pixel < 5:
+                image_sum.append(0) #Black
+            elif pixel < 10:
+                image_sum.append(1) #Gray
+            else:
+                image_sum.append(2) #White
+        data_summarized.append(image_sum)
+    data_summarized = np.stack(data_summarized)
+    train_features, test_features, train_labels, test_labels = train_test_split(data_summarized, digits.target, test_size=0.3)
+    class_prob = classes_prob(train_labels, classes)
+    print(class_prob)
+    cpt_table = cpt(train_features, train_labels)
+    y_pred = predict(train_features, cpt_table, test_features, class_prob)
+    print("Classification report SKLearn GNB:\n%s\n"
+      % (metrics.classification_report(test_labels, y_pred)))
+    print("Confusion matrix SKLearn GNB:\n%s" % metrics.confusion_matrix(test_labels, y_pred))
+    
+def gnb(mnist):
 
+    def prob(x, mean, var):
+        #pdb.set_trace()
+        if var == 0:
+            if x == mean:
+                return 1.0
+            else:
+                return 0.01
+        else:
+            return (1 / np.sqrt(2*np.pi*var)) * np.exp(-(1/(2*var))*(x-mean)**2)
+    def cpt(features, train_labels):
+        #CPTijk = P(Pixeli = vj | Number = k)
+        features_class = {}
+        classes = []
+        for i, feauture in enumerate(features):
+            if train_labels[i] not in classes:
+                classes.append(train_labels[i])
+                features_class[train_labels[i]] = []
+            features_class[train_labels[i]].append(feauture)
+        class_prob = {k: 0.0 for k in classes} 
+        cpt_table = {k: [] for k in classes}
+        for class_ in classes:
+            feauture = np.stack(features_class[class_])
+            for i in range(feauture.shape[1]):
+                mean = np.mean(feauture[:, i])
+                var = np.var(feauture[:, i])
+                cpt_table[class_].append((mean, var))
+            class_prob[class_] = prob(class_, np.mean(train_labels), np.var(train_labels))
+        return cpt_table, class_prob
+
+    def predict(cpt, class_prob, test_features):
+        
+        prediction = []
+        for feature in test_features:
+            label_probs = np.zeros(len(class_prob))
+            for class_ in cpt:
+                probs = []
+                for i in range(len(feature)):
+                    probs.append(prob(feature[i], cpt[class_][i][0], cpt[class_][i][1]))
+                label_probs[class_] = class_prob[class_] * np.prod(probs)
+            prediction.append(np.argmax(label_probs, axis=0))
+        return prediction
+
+    print('---------------------SciKitLearn Digits---------------------')
+    digits = datasets.load_digits()
+    data = digits.data
+    classes = digits.target_names
+    train_features, test_features, train_labels, test_labels = train_test_split(data, digits.target, test_size=0.3)
+    cpt_table, class_prob = cpt(train_features, train_labels)
+    y_pred = predict(cpt_table, class_prob, test_features)
+    print("Classification report SKLearn GNB:\n%s\n"
+      % (metrics.classification_report(test_labels, y_pred)))
+    print("Confusion matrix SKLearn GNB:\n%s" % metrics.confusion_matrix(test_labels, y_pred))
+    print('---------------------SciKitLearn Digits Summarized---------------------')
+    
+    data_summarized = []
+    for image in data:
+        image_sum = []
+        for pixel in image:
+            if pixel < 5:
+                image_sum.append(0) #Black
+            elif pixel < 10:
+                image_sum.append(1) #Gray
+            else:
+                image_sum.append(2) #White
+        data_summarized.append(image_sum)
+    data_summarized = np.stack(data_summarized)
+    train_features, test_features, train_labels, test_labels = train_test_split(data_summarized, digits.target, test_size=0.3)
+    cpt_table, class_prob = cpt(train_features, train_labels)
+    y_pred = predict(cpt_table, class_prob, test_features)
+    print("Classification report SKLearn GNB:\n%s\n"
+      % (metrics.classification_report(test_labels, y_pred)))
+    print("Confusion matrix SKLearn GNB:\n%s" % metrics.confusion_matrix(test_labels, y_pred))
+    
+    print('---------------------MNIST_Light---------------------')
+    train_features, test_features, train_labels, test_labels = mnist.get_data()
+    cpt_table, class_prob = cpt(train_features, train_labels)
+    y_pred = predict(cpt_table, class_prob, test_features)
+    print("Classification report SKLearn GNB:\n%s\n"
+      % (metrics.classification_report(test_labels, y_pred)))
+    print("Confusion matrix SKLearn GNB:\n%s" % metrics.confusion_matrix(test_labels, y_pred))
+    
 if __name__ == "__main__":
 
     mnist = MNISTData('/home/rcarbajsa/Escritorio/edan95_datasets/MNIST_Light/*/*.png')
     #gaussian_nb(mnist)
     #ncc(mnist)
-    nbc()
+    #nbc()
+    gnb(mnist)
 
 
