@@ -44,10 +44,10 @@ def main():
 
     print("------------------- My tree with ToyData -------------------")
     attributes, classes, data, target, data2, target2 = td.ToyData().get_data()
-    id3 = ID3.ID3DecisionTreeClassifier()
+    id3 = ID3.ID3DecisionTreeClassifier(toy=1)
     myTree = id3.fit(data, target, attributes, classes)
     plot = id3.make_dot_data()
-    plot.render("testTree")
+    plot.render("testTree_toyData")
     #pdb.set_trace()
     result = id3.predict(data2)
     print("Predicted" + str(result))
@@ -55,16 +55,17 @@ def main():
     print(report)
     report = metrics.confusion_matrix(target2, result)
     print(report)
-
+    classes = [0,1,2,3,4,5,6,7,8,9]
     print("------------------- My tree with digits -------------------")
-    id3 = ID3.ID3DecisionTreeClassifier()
+    print(len(train_data))
+    id3 = ID3.ID3DecisionTreeClassifier(toy=0)
     att_values = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
     attributes = {}
     for i in range(64):
         attributes[i] = att_values
     myTree = id3.fit(train_data, train_target, attributes, classes)
     plot = id3.make_dot_data()
-    plot.render("testTree")
+    plot.render("testTree_digits")
     #pdb.set_trace()
     result = id3.predict(test_data)
     print("Predicted" + str(result))
@@ -74,7 +75,7 @@ def main():
     print(report)
 
     print("------------------- My tree with d-g-l -------------------")
-    id3 = ID3.ID3DecisionTreeClassifier()
+    id3 = ID3.ID3DecisionTreeClassifier(toy=0)
     att_values = ['d','g','l']
     attributes = {}
     for i in range(64):
@@ -92,10 +93,10 @@ def main():
         data.append(row)
     train_data = data[:sep]
     test_data = data[sep:]
+    #pdb.set_trace()
     myTree = id3.fit(train_data, train_target, attributes, classes)
     plot = id3.make_dot_data()
-    plot.render("testTree")
-    #pdb.set_trace()
+    plot.render("testTree_digits_dgl")
     result = id3.predict(test_data)
     print("Predicted" + str(result))
     report = metrics.classification_report(test_target, result)

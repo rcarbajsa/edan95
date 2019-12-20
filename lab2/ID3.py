@@ -1,28 +1,48 @@
-import math
-from collections import Counter
+from __future__ import division
+from math import log
+from collections import Counter, OrderedDict
 from graphviz import Digraph
+from sklearn import tree, metrics, datasets, preprocessing
 import pdb
 import ToyData as td
-from collections import OrderedDict
+
 def most_common_class(target):
     if not target:
         return '+'
     else:
         return max(set(target), key=target.count)
 def main():
-    attributes, classes, data, target, data2, target2 = td.ToyData().get_data()
-    id3 = ID3DecisionTreeClassifier()
-    myTree = id3.fit(data, target, attributes, classes)
+
+    digits = datasets.load_digits()
+    data_digits = digits.data
+    target = digits.target
+    sep = int(len(data_digits) * 0.7)
+    train_data = data_digits[:sep]
+    test_data = data_digits[sep:]
+    train_target = target[:sep]
+    test_target = target[sep:]
+    classes = digits.target_names
+    id3 = ID3DecisionTreeClassifier(0)
+    att_values = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+    attributes = {}
+    for i in range(64):
+        attributes[i] = att_values
+    myTree = id3.fit(train_data, train_target, attributes, classes)
     plot = id3.make_dot_data()
-    plot.render("testTree")
+    plot.render("testTree_digits")
     #pdb.set_trace()
-    result = id3.predict(data2)
-    print(result)
+    result = id3.predict(test_data)
+    print("Predicted" + str(result))
+    report = metrics.classification_report(test_target, result)
+    print(report)
+    report = metrics.confusion_matrix(test_target, result)
+    print(report)
+
 
 
 class ID3DecisionTreeClassifier:
 
-    def __init__(self, minSamplesLeaf=1, minSamplesSplit=2):
+    def __init__(self, toy, minSamplesLeaf=1, minSamplesSplit=2):
 
         self.__nodeCounter = 0
 
@@ -33,6 +53,7 @@ class ID3DecisionTreeClassifier:
         self.__minSamplesLeaf = minSamplesLeaf
         self.__minSamplesSplit = minSamplesSplit
         self.nodes = []
+        self.toy = toy
 
     # Create a new node in the tree with the suggested attributes for the visualisation.
     # It can later be added to the graph with the respective function
@@ -87,10 +108,16 @@ class ID3DecisionTreeClassifier:
 
     def entropy(self, classes, target):
         entropy = 0
-        
         for label in classes:
-            if(target.count(label)):
-                entropy += (target.count(label) / len(target)) * math.log(target.count(label) / len(target), 2)
+            if self.toy:
+                if(target.count(label)):
+                    aux = target.count(label) / len(target)
+                    entropy += (target.count(label) / len(target)) * log(aux, 2)
+            else:
+                temp = Counter(target)[label]
+                if(temp):
+                    aux = temp / len(target)
+                    entropy += (temp / len(target)) * log(aux, 2)
         return -entropy
 
     def info_gain(self, entropy, data, attribute, target, classes):
@@ -111,7 +138,7 @@ class ID3DecisionTreeClassifier:
 
     def rec_id3(self, node, data, target, attributes, classes):
         # No attributes left or all samples belong to one class
-        if not attributes or len(set(target)) == 1 or not data:
+        if not attributes or len(set(target)) == 1 or data == []:
             return self.set_node_attr(node, data={'entropy': self.entropy(classes, target),'label': most_common_class(target), 'samples': len(target)})
         else:
              
@@ -120,7 +147,10 @@ class ID3DecisionTreeClassifier:
             for att in attributes:
                 info_gain.append(self.info_gain(ent, data, attributes[att], target, classes))
             max_info_gain = max(info_gain)
+            #print(info_gain)
+            #pdb.set_trace()
             attribute = list(attributes.items())[info_gain.index(max_info_gain)][0]
+            #print(attribute)
             values = list(attributes.items())[info_gain.index(max_info_gain)][1]
             self.set_node_attr(node, data={'attribute': attribute, 'entropy': ent, 'samples': len(target)})
             attributes_cpy = OrderedDict(attributes)
