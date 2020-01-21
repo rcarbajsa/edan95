@@ -1,117 +1,178 @@
-import matplotlib.pyplot as plt
-from matplotlib import style
-style.use('fivethirtyeight')
-from sklearn.datasets import make_blobs
 from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
 import numpy as np
-from scipy.stats import multivariate_normal
-from sklearn.metrics.cluster import completeness_score
-
-#Dataset 
-digits = load_digits()
-data = digits.data
-n_samples = len(digits.images)
-data = digits.images.reshape((n_samples, -1))
-X, test_features, train_labels, test_labels = train_test_split(data, digits.target, test_size=0.3)
+from sklearn import metrics, datasets, cluster
+import scipy.stats as st
 
 #GMM
 class GMM:
     #Estado inicial
-    def __init__(self,X,number_of_sources,iterations):
+    def __init__(self,data, X,classes,iterations):
+        self.data =data
         self.iterations = iterations
-        self.number_of_sources = number_of_sources
+        self.classes = classes
         self.X = X
-        self.mu = None
-        self.pi = None
-        self.cov = None
-        self.XY = None
+        self.theta = dict()
 
     #EM Algorithm
     def fit(self):
-        self.reg_cov = 1e-6*np.identity(len(self.X[0]))
-        x,y = np.meshgrid(np.sort(self.X[:,0]),np.sort(self.X[:,1]))
-        self.XY = np.array([x.flatten(),y.flatten()]).T
-        print(X[0])
-        #print(min(self.X[:,0]),max(self.X[:,0]))
-           
-                    
         """ 1. Set the initial mu, covariance and pi values"""
-        self.mu = np.random.randint(min(self.X[:,0]),max(self.X[:,0]),size=(self.number_of_sources,len(self.X[0]))) # nxm 
-        self.cov = np.zeros((self.number_of_sources,len(X[0]),len(X[0]))) # nxmxm covariance matrix 
-        for dim in range(len(self.cov)):
-            np.fill_diagonal(self.cov[dim],5)
-
-
-        self.pi = np.ones(self.number_of_sources)/self.number_of_sources 
-        log_likelihoods = [] 
+        indexes = np.random.randint(len(self.data), size=int(len(self.data)*0.1))
+        temp = dict()
+        for i in indexes:
+            k = digits_target[i]
+            pixels = self.data[i]
+            if k not in temp:
+                temp[k] = list()
+            temp[k].append(pixels)
             
-        """Plot the initial state"""    
-        fig = plt.figure(figsize=(10,10))
-        ax0 = fig.add_subplot(111)
-        ax0.scatter(self.X[:,0],self.X[:,1])
-        ax0.set_title('Initial state')
-        for m,c in zip(self.mu,self.cov):
-            c += self.reg_cov
-            multi_normal = multivariate_normal(mean=m,cov=c)
-            ax0.contour(np.sort(self.X[:,0]),np.sort(self.X[:,1]),multi_normal.pdf(self.XY).reshape(len(self.X),len(self.X)),colors='black',alpha=0.3)
-            ax0.scatter(m[0],m[1],c='grey',zorder=10,s=100)
-        
+        for k in temp:
+            pi = 0.1
+            values = np.array(temp[k])
+            mu = np.zeros(self.data.shape[1])
+            cov = np.zeros(self.data.shape[1])
+            epsilon = 0.01
+            for i in range(len(values[0])):
+                mu[i] = np.mean(values[:,i])
+                cov[i] = np.var(values[:,i]) + epsilon
+            self.theta[k] = np.array([pi, mu, cov])
+               
+        r = self.E_step()
+        self.theta = self.M_step(r)
         for i in range(self.iterations):               
-
             """E Step"""
-            r_ic = np.zeros((len(self.X),len(self.cov)))
-
-            for m,co,p,r in zip(self.mu,self.cov,self.pi,range(len(r_ic[0]))):
-                co+=self.reg_cov
-                mn = multivariate_normal(mean=m,cov=co)
-                r_ic[:,r] = p*mn.pdf(self.X)/np.sum([pi_c*multivariate_normal(mean=mu_c,cov=cov_c).pdf(X) for pi_c,mu_c,cov_c in zip(self.pi,self.mu,self.cov+self.reg_cov)],axis=0)
-
+            r = self.E_step()
             """M Step"""
-
-            # Calculate the new mean vector and new covariance matrices
-            self.mu = []
-            self.cov = []
-            self.pi = []
-            log_likelihood = []
-
-            for c in range(len(r_ic[0])):
-                m_c = np.sum(r_ic[:,c],axis=0)
-                mu_c = (1/m_c)*np.sum(self.X*r_ic[:,c].reshape(len(self.X),1),axis=0)
-                self.mu.append(mu_c)
-
-                # Calculate the covariance matrix per source based on the new mean
-                self.cov.append(((1/m_c)*np.dot((np.array(r_ic[:,c]).reshape(len(self.X),1)*(self.X-mu_c)).T,(self.X-mu_c)))+self.reg_cov)
-                # Calculate pi_new
-                self.pi.append(m_c/np.sum(r_ic))
-
-            
-            
-            """Log likelihood"""
-            log_likelihoods.append(np.log(np.sum([k*multivariate_normal(self.mu[i],self.cov[j]).pdf(X) for k,i,j in zip(self.pi,range(len(self.mu)),range(len(self.cov)))])))
-
-        fig2 = plt.figure(figsize=(10,10))
-        ax1 = fig2.add_subplot(111) 
-        ax1.set_title('Log-Likelihood')
-        ax1.plot(range(0,self.iterations,1),log_likelihoods)
-        plt.show()
-
-    def predict(self,Y):
-        # PLot the point onto the fittet gaussians
-        fig3 = plt.figure(figsize=(10,10))
-        ax2 = fig3.add_subplot(111)
-        ax2.scatter(self.X[:,0],self.X[:,1])
-        for m,c in zip(self.mu,self.cov):
-            multi_normal = multivariate_normal(mean=m,cov=c)
-            ax2.contour(np.sort(self.X[:,0]),np.sort(self.X[:,1]),multi_normal.pdf(self.XY).reshape(len(self.X),len(self.X)),colors='black',alpha=0.3)
-            ax2.scatter(m[0],m[1],c='grey',zorder=10,s=100)
-            ax2.set_title('Final state')
-            for y in Y:
-                ax2.scatter(y[0],y[1],c='orange',zorder=10,s=100)
-        prediction = []        
-        for m,c in zip(self.mu,self.cov):  
-            #print(c)
-            prediction.append(multivariate_normal(mean=m,cov=c).pdf(Y)/np.sum([multivariate_normal(mean=mean,cov=cov).pdf(Y) for mean,cov in zip(self.mu,self.cov)]))
-        plt.show()
-        return prediction
+            self.theta = self.M_step(r)
     
+    def E_step(self):
+        r = np.zeros((self.X.shape[0],self.classes)) 
+        for i in range(len(self.X)):
+            prob = np.prod([st.norm.pdf(self.X[i], self.theta[k][1], np.sqrt(self.theta[k][2])) for k in range(self.classes)], axis = 1)
+            prod = [self.theta[k][0]*prob[k] for k in range(self.classes)]
+            den = np.sum(prod)
+            r[i,:] = prod/den    
+        return r
+
+    def M_step(self, r):
+        r_k = {k:np.sum(r[:,k]) for k in range(10)}
+        self.theta = dict()
+        epsilon = 0.01
+        for k in r_k:
+            pi = r_k[k]/len(self.X)
+            mu = np.sum([r[i][k]*self.X[i] for i in range(len(self.X))], axis=0)/r_k[k]
+            cov = np.sum([r[i][k]*(self.X[i]**2) for i in range(len(self.X))], axis=0)/r_k[k] - mu**2 + epsilon
+            self.theta[k] = np.array([pi, mu, cov])
+        return self.theta 
+
+    def predict(self, X):
+        probs = np.zeros((len(X), self.classes))
+        for k in self.theta:
+            pi = self.theta[k][0]
+            mu = self.theta[k][1]
+            cov = self.theta[k][2]
+            probs[:,k] = np.sum(np.log(st.norm.pdf(X, mu, cov)) + np.log(pi), axis=1)
+        return np.argmax(probs,axis=1)
+
+    def repair(self, y_true, y_pred):
+        k_map = dict()
+        for k in range(self.classes):
+            idxs = [i for i in range(len(y_test)) if y_pred[i]==k]
+            unique, counts = np.unique(y_true[idxs], return_counts=True)
+            k_map[k] = unique[np.argmax(counts)]
+        y_real = list()
+        for y in y_pred:
+            y_real.append(k_map[y])
+        return y_real
+
+
+
+#Dataset 
+digits = load_digits()
+data = digits.data
+digits_split = int(len(data)*0.7)
+x_train = data[:digits_split]
+x_test = data[digits_split:]
+digits_target = digits.target
+y_train = digits_target[:digits_split]
+y_test = digits_target[digits_split:]
+
+print('Training data:', len(x_train), '\nTraining Labels:', len(y_train), '\nTesting Data:', 
+      len(x_test), '\nTesting Labels:', len(y_test), '\nCheck:', 
+      len(data) == len(x_train) + len(x_test))
+print(x_train.shape)
+print(y_train.shape)
+x_train /= 16
+x_test /= 16
+
+GMM = GMM(data,x_train,10,50)     
+GMM.fit()
+
+y_pred_train = GMM.predict(x_train)
+
+print("Classification report EM:\n%s\n" % 
+      (metrics.classification_report(y_train, y_pred_train)))
+print("Confusion matrix EM:\n%s" % metrics.confusion_matrix(y_train, y_pred_train))
+print()
+h_c_v = metrics.homogeneity_completeness_v_measure(y_train, y_pred_train)
+print('Homogenity:',h_c_v[0])
+print('Completeness:',h_c_v[1])
+print('V-measure:',h_c_v[2])
+
+y_pred_test = GMM.predict(x_test)
+
+print("Classification report EM:\n%s\n" % 
+      (metrics.classification_report(y_test, y_pred_test)))
+print("Confusion matrix EM:\n%s" % metrics.confusion_matrix(y_test, y_pred_test))
+print()
+h_c_v = metrics.homogeneity_completeness_v_measure(y_test, y_pred_test)
+print('Homogenity:',h_c_v[0])
+print('Completeness:',h_c_v[1])
+print('V-measure:',h_c_v[2])
+
+
+y_pred_repair = GMM.repair(y_train, y_pred_train)
+print("Classification report SKLearn K-Means:\n%s\n" % 
+      (metrics.classification_report(y_train, y_pred_repair)))
+print("Confusion matrix SKLearn EM:\n%s" % metrics.confusion_matrix(y_train, y_pred_repair))
+print()
+h_c_v = metrics.homogeneity_completeness_v_measure(y_train, y_pred_repair)
+print('Homogenity:',h_c_v[0])
+print('Completeness:',h_c_v[1])
+print('V-measure:',h_c_v[2])
+print()
+
+y_pred_test_repair = GMM.repair(y_test, y_pred_test)
+print("Classification report SKLearn k-Means:\n%s\n" % 
+      (metrics.classification_report(y_test, y_pred_test_repair)))
+print("Confusion matrix SKLearn EM:\n%s" % metrics.confusion_matrix(y_test, y_pred_test_repair))
+print()
+h_c_v = metrics.homogeneity_completeness_v_measure(y_test, y_pred_test_repair)
+print('Homogenity:',h_c_v[0])
+print('Completeness:',h_c_v[1])
+print('V-measure:',h_c_v[2])
+
+
+k_means = cluster.KMeans(n_clusters=10).fit(x_train)
+y_pred_kmeans = k_means.predict(x_train)
+y_pred_kmeans_real = GMM.repair(y_train, y_pred_kmeans)
+print("Classification report SKLearn K-Means:\n%s\n" % 
+      (metrics.classification_report(y_train, y_pred_kmeans_real)))
+print("Confusion matrix SKLearn EM:\n%s" % metrics.confusion_matrix(y_train, y_pred_kmeans_real))
+print()
+h_c_v = metrics.homogeneity_completeness_v_measure(y_train, y_pred_kmeans_real)
+print('Homogenity:',h_c_v[0])
+print('Completeness:',h_c_v[1])
+print('V-measure:',h_c_v[2])
+print()
+
+y_pred_kmeans_test = k_means.predict(x_test)
+y_pred_kmeans_test_real = GMM.repair(y_test, y_pred_kmeans_test)
+print("Classification report SKLearn k-Means:\n%s\n" % 
+      (metrics.classification_report(y_test, y_pred_kmeans_test_real)))
+print("Confusion matrix SKLearn EM:\n%s" % metrics.confusion_matrix(y_test, y_pred_kmeans_test_real))
+print()
+h_c_v = metrics.homogeneity_completeness_v_measure(y_test, y_pred_kmeans_test_real)
+print('Homogenity:',h_c_v[0])
+print('Completeness:',h_c_v[1])
+print('V-measure:',h_c_v[2])
